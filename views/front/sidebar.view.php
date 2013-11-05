@@ -1,6 +1,6 @@
 <?
 if (empty($sidebar->blocs)) {
-	return false;
+	return ;
 }
 ?>
 <div class="sidebar" id="sidebar-<?= $sidebar->side_id ?>">

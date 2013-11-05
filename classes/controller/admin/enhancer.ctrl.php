@@ -9,6 +9,8 @@ class Controller_Admin_Enhancer extends \Nos\Controller_Admin_Enhancer
 		$options = array(
 			'order_by' => array('side_title' => 'asc'),
 		);
+
+		// @todo context
 //		$nosContext = \Arr::get(\Input::get(), 'nosContext', null);
 //		if (!empty($nosContext)) {
 //			$options['where'] = array(array('context', $nosContext));

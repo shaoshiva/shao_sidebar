@@ -1,16 +1,15 @@
 <? $container_id = uniqid(); ?>
 <style type="text/css">
 .sidebar-blocs {
-	float: left;
-	width: 35em;
 }
 .sidebar-blocs .blocs {
 	margin: 1em 0;
-	padding: 2em;
 	border: 1px solid #ccc;
 	border-radius: 6px;
 }
-.sidebar-blocs > .actions {
+.sidebar-blocs .blocs ul {
+}
+.sidebar-blocs div > .actions {
     float: right;
     margin-top: -5px;
 }
@@ -54,26 +53,30 @@
     margin: 1em 0 0 0 !important;
 }
 .sidebar-blocs ul {
+    padding: 2em;
+	min-height: 10em;
 	list-style-type: none;
 }
 .sidebar-blocs .bloc_title input {
 	width: 100%;
     box-sizing: border-box;
 }
-.sidebar-preview {
+.sidebar-published {
+    float: left;
+    width: 35em;
+}
+.sidebar-unpublished {
     float: left;
     width: 35em;
     margin-left: 3em;
 }
-.sidebar-preview .blocs {
+.sidebar-unpublished .blocs {
     position: relative;
     border: 1px dashed #cccccc;
-    padding-left: 2em;
-	margin: 1em 0;
     min-height: 10em;
-	border-radius: 5px;
+	opacity: 0.7;
 }
-.sidebar-preview .blocs > em {
+.sidebar-unpublished .blocs > em {
     position: absolute;
 	height: 18px;
 	width: 100%;
@@ -112,35 +115,22 @@ $(function() {
         $new.find('.mceEditor').remove();
 
 		// Add to dom
-        $blocs.find('ul').append($('<li></li>').append($new));
+        $container.find('.sidebar-published ul').append($('<li></li>').append($new));
 		$new.before('<h2><em><?= _('Bloc') ?></em></h2>');
 
 		// Reload wysiwyg editor
         reload_wys_editor(editor_id);
 
 		// Reload UI
-        var default_accordion = $container.find('.blocs .wijmo-wijaccordion-content-active').first().closest('li').index();
         $container.find('.blocs').wijaccordion('destroy');
         $container.find('.blocs ul').sortable('destroy');
-        init_blocs({
-			accordion:	{
-            	selectedIndex: default_accordion
-			}
-		});
+        init_blocs();
+        var default_accordion = $container.find('.sidebar-published .blocs .wijmo-wijaccordion-content-active').first().closest('li').index();
+        $container.find('.sidebar-published .blocs').wijaccordion("activate", default_accordion);
 	});
 
 	// Load UI
     init_blocs();
-
-	function reorder_blocs() {
-        var n = 0;
-        $container.find('.blocs .bloc').each(function() {
-			$(this).find('[name^="bloc["]').each(function() {
-                $(this).attr('name', $(this).attr('name').replace(/\[[0-9]+\]/g, "["+n+"]"));
-            });
-			n++;
-        });
-	}
 
     // Dynamic title
     $container.on('keyup', 'input[name*="[sibl_title]"]',
@@ -168,20 +158,41 @@ $(function() {
                 }
             },
 			sortable	: {
-                stop: function(e, ui) {
-					// Reload all wysiwygs
+                connectWith	: ".sidebar-sortable",
+                stop		: function(e, ui) {
+					// Reload wysiwyg editors
                     $container.find('.blocs .wys textarea').each(function() {
                         reload_wys_editor($(this).attr('id'));
-                        reorder_blocs();
 					});
+                    // Reorder input keys
+                    var n = 0;
+                    $container.find('.blocs .bloc').each(function() {
+                        $(this).find('[name^="bloc["]').each(function() {
+                            $(this).attr('name', $(this).attr('name').replace(/\[[0-9]+\]/g, "["+n+"]"));
+                        });
+                        n++;
+                    });
+                    init_blocs( );
                 }
             }
 		}, options);
-        $container.find('.blocs').wijaccordion(settings.accordion);
-        $container.find('.blocs ul').sortable(settings.sortable);
+
+		// Init accordion
+        $container.find('.blocs').each(function() {
+            var $active = $(this).find('.ui-state-active');
+			settings.accordion.selectedIndex = $active.length ? $active.first().closest('li').index() : 0;
+            $active.slice(1).removeClass('ui-state-active').addClass('ui-state-default').next('.wijmo-wijaccordion-content-active').removeClass('wijmo-wijaccordion-content-active');
+			$(this).wijaccordion(settings.accordion);
+            if (!$active.length) {
+            	$(this).wijaccordion("activate", settings.accordion.selectedIndex);
+			}
+        });
         $container.find('.blocs .bloc').removeClass('ui-state-default');
 
-		// Add blocs action buttons
+		// Init sortable
+        $container.find('.blocs ul').sortable(settings.sortable);
+
+		// Add bloc's action buttons
         $container.find('.blocs h2').each(function() {
 			var $this = $(this);
 
@@ -247,52 +258,55 @@ if (empty($blocs)) {
 }
 ?>
 <div class="sidebar-blocs" id="sidebar-blocs-<?= $container_id ?>">
-	<div class="actions">
-		<button type="button" data-icon="plusthick" class="add-new-bloc"><?= _('Add bloc') ?></button>
-		<button type="button" data-icon="circle-zoomout" class="preview-blocs"><?= _('Preview') ?></button>
-    </div>
-	<h1 class="title"><?= _('Sidebar blocs') ?></h1>
-	<div class="blocs">
-		<ul>
-			<?php $n = 0; foreach ($blocs as $bloc) { ?>
-			<li>
-                <input type="hidden" name="bloc[<?= $n ?>][sibl_id]" value="<?= $bloc->sibl_id ?>" />
-				<h2><em><?= _('Bloc') ?></em></h2>
-				<div class="bloc ui-state-default">
-					<div class="bloc_title">
-                        <label>
-							<input placeholder="<?= _('Title') ?>" type="text" name="bloc[<?= $n ?>][sibl_title]" value="<?= $bloc->sibl_title ?>" />
-                        </label>
-					</div>
-					<div class="wys">
-						<?php
-						echo \Nos\Renderer_Wysiwyg::renderer(array(
-							'style' => 'width: 100%; height: 220px;',
-							'name'	=> 'bloc['.$n.'][wysiwyg]',
-							'value'	=> $bloc->wysiwygs->content,
-							'renderer_options' => array(
-								'mode' => 'exact',
-							),
-						));
-						?>
-					</div>
-					<div class="options">
-						<div class="bloc_class">
+	<div class="sidebar-published">
+		<div class="actions">
+			<button type="button" data-icon="plusthick" class="add-new-bloc"><?= _('Add bloc') ?></button>
+		</div>
+		<h1 class="title"><?= _('Sidebar blocs') ?></h1>
+		<div class="blocs">
+			<ul class="sidebar-sortable">
+				<?php $n = 0; foreach ($blocs as $bloc) { ?>
+				<li>
+					<input type="hidden" name="bloc[<?= $n ?>][sibl_id]" value="<?= $bloc->sibl_id ?>" />
+					<h2><em><?= _('Bloc') ?></em></h2>
+					<div class="bloc ui-state-default">
+						<div class="bloc_title">
 							<label>
-								<?= _('CSS class property') ?> <input type="text" name="bloc[<?= $n ?>][sibl_class]" value="<?= $bloc->sibl_class ?>" />
+								<input placeholder="<?= _('Title') ?>" type="text" name="bloc[<?= $n ?>][sibl_title]" value="<?= $bloc->sibl_title ?>" />
 							</label>
 						</div>
+						<div class="wys">
+							<?php
+							echo \Nos\Renderer_Wysiwyg::renderer(array(
+								'style' => 'width: 100%; height: 220px;',
+								'name'	=> 'bloc['.$n.'][wysiwyg]',
+								'value'	=> $bloc->wysiwygs->content,
+								'renderer_options' => array(
+									'mode' => 'exact',
+								),
+							));
+							?>
+						</div>
+						<div class="options">
+							<div class="bloc_class">
+								<label>
+									<?= _('CSS class property') ?> <input type="text" name="bloc[<?= $n ?>][sibl_class]" value="<?= $bloc->sibl_class ?>" />
+								</label>
+							</div>
+						</div>
 					</div>
-				</div>
-            </li>
-			<? $n++; } ?>
-        </ul>
+				</li>
+				<? $n++; } ?>
+			</ul>
+		</div>
 	</div>
-</div>
 
-<div class="sidebar-preview" id="sidebar-preview-<?= $container_id ?>">
-    <h1 class="title"><?= _('Sidebar preview') ?></h1>
-	<div class="blocs">
-		<em><?= _('Click the <strong>Preview</strong> button to see what you\'ve done !') ?></em>
+	<div class="sidebar-unpublished" id="sidebar-unpublished-<?= $container_id ?>">
+		<h1 class="title"><?= _('Sidebar unpublished') ?></h1>
+		<div class="blocs">
+			<ul class="sidebar-sortable">
+
+			</ul>
+		</div>
 	</div>
 </div>
