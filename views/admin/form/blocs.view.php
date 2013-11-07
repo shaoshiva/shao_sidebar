@@ -234,7 +234,6 @@ $index = 0;
                         $container.find('.blocs .bloc').each(function() {
                             $(this).find('[name^="bloc["]').each(function() {
                                 $(this).attr('name', $(this).attr('name').replace(/\[[0-9]+\]/g, "["+n+"]"));
-								console.log(this.nodeName);
                             });
                             n++;
                         });
