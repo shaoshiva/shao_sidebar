@@ -27,14 +27,15 @@ class Controller_Admin_Sidebar_Crud extends \Nos\Controller_Admin_Crud
 
 			// Set datas
 			$model->set(array(
-				'sibl_title'	=> \Arr::get($bloc, 'sibl_title', ''),
-				'sibl_class'	=> \Arr::get($bloc, 'sibl_class', ''),
-				'sibl_side_id'	=> $item->side_id,
+				'sibl_title'		=> \Arr::get($bloc, 'sibl_title', ''),
+				'sibl_class'		=> \Arr::get($bloc, 'sibl_class', ''),
+				'sibl_side_id'		=> $item->side_id,
+				'sibl_published'	=> \Arr::get($bloc, 'sibl_published', ''),
 			));
 
 			// Set wysiwyg
 			$model->wysiwygs->content = \Arr::get($bloc, 'wysiwyg', '');
-			
+
 			// Save bloc
 			$model->save();
 		}
@@ -57,7 +58,7 @@ class Controller_Admin_Sidebar_Crud extends \Nos\Controller_Admin_Crud
 		$model->delete();
 
 		\Response::json(array(
-			'notify' => __('Block deleted successfully!'),
+			'notify' => __('Block successfully deleted!'),
 			'dispatchEvent' => array(
 				'name' 		=> 'Shao\\Sidebar',
 				'action' 	=> 'delete',

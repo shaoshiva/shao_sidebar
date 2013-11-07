@@ -14,6 +14,7 @@ class Model_Sidebarbloc extends \Nos\Orm\Model
 		'sibl_title',
 		'sibl_class',
 		'sibl_sort',
+		'sibl_published',
         'sibl_created_at',
         'sibl_updated_at',
     );
